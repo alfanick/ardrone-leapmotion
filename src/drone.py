@@ -4,15 +4,20 @@ import Leap, sys
 from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
 class LeapParams:
+  front_offset = 30.0
   height_offset = 220.0
   # left right
-  box_size_x = 180.0
+  box_size_x = 160.0
   # up down
   box_size_y = 120.0
   # front back
-  box_size_z = 120.0
+  box_size_z = 100.0
   # rotation
   angle_range = 0.5
+
+  scale_x = 40.0
+  scale_y = 70.0
+  scale_z = 40.0
 
   def __init__(self):
     pass
@@ -27,6 +32,7 @@ class DroneListener(Leap.Listener):
 
     def on_init(self, controller):
         print "Leap Initialized"
+        self.start_time = time.time()
 
     def on_connect(self, controller):
         print "Leap Connected"
@@ -42,6 +48,10 @@ class DroneListener(Leap.Listener):
         pass
 
     def on_frame(self, controller):
+        # Prevent leap from reading unnecessary stuff
+        if time.time() - self.start_time < 1.5:
+          return
+
         frame = controller.frame()
 
         if frame.hands.is_empty:
@@ -73,11 +83,13 @@ class DroneListener(Leap.Listener):
                 self.hover()
 
             elif len(hand.fingers) == 2:
-              self.rotate(hand.direction.x)
+              # self.rotate(hand.direction.x)
+              pos = hand.palm_position
+              self.rotate_with_reposition(hand.direction.x, pos.x, pos.y - params.height_offset, pos.z - params.front_offset)
 
             else:
               pos = hand.palm_position
-              self.reposition(pos.x, pos.y - params.height_offset, pos.z)
+              self.reposition(pos.x, pos.y - params.height_offset, pos.z - params.front_offset)
 
         pass
 
@@ -102,9 +114,9 @@ class DroneListener(Leap.Listener):
     # position.y - up/down
     # position.z - front/back
     def reposition (self, x, y, z):
-      x = self.normalize(x, 1.5 * params.box_size_x)
-      y = self.normalize(y, params.box_size_y)
-      z = self.normalize(z, params.box_size_z)
+      x = self.normalize(x, params.box_size_x, params.scale_x)
+      y = self.normalize(y, params.box_size_y, params.scale_y)
+      z = self.normalize(z, params.box_size_z, params.scale_z)
       print "repositioning %.2f %.2f %.2f" % (x, y, z)
       drone.at(libardrone.at_pcmd, True, x, z, y, 0)
 
@@ -120,11 +132,24 @@ class DroneListener(Leap.Listener):
       print "rotating %s" % angle
       drone.at(libardrone.at_pcmd, True, 0, 0, 0, angle)
 
-    def normalize(self, val, box):
+    def rotate_with_reposition(self, angle, x, y, z):
+      angle = min(angle, params.angle_range)
+      angle = max(angle, -params.angle_range)
+      angle = angle / float(params.angle_range)
+
+      x = self.normalize(x, params.box_size_x, params.scale_x)
+      y = self.normalize(y, params.box_size_y, params.scale_y)
+      z = self.normalize(z, params.box_size_z, params.scale_z)
+
+      print "rotating %s + movement(%.2f %.2f %.2f)" % (angle, x, y, z)
+      drone.at(libardrone.at_pcmd, True, x, z, y, angle)
+
+
+    def normalize(self, val, box, scale):
       val = 0 if abs(val) < 20 else val
       val = min(val, box)
       val = max(val, -box)
-      val = val / float(box) / 20.0
+      val = val / float(box) * scale / 100.0
       return val
 
 
