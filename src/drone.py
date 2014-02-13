@@ -67,7 +67,7 @@ class DroneListener(Leap.Listener):
 
 
         for gesture in frame.gestures():
-          if gesture.type == Leap.Gesture.TYPE_CIRCLE:
+          if self.flying == True and gesture.type == Leap.Gesture.TYPE_CIRCLE:
             circle = CircleGesture(gesture)
             if circle.normal.z > 0.8:
               self.flip_it_baby_left()
@@ -104,9 +104,9 @@ class DroneListener(Leap.Listener):
                 self.hover()
 
             elif len(hand.fingers) == 2:
-              # self.rotate(hand.direction.x)
-              pos = hand.palm_position
-              self.rotate_with_reposition(hand.direction.x, pos.x, pos.y - params.height_offset, pos.z - params.front_offset)
+              self.rotate(hand.direction.x)
+              #pos = hand.palm_position
+              #self.rotate_with_reposition(hand.direction.x, pos.x, 0, pos.z - params.front_offset)
 
             else:
               pos = hand.palm_position
@@ -175,12 +175,12 @@ class DroneListener(Leap.Listener):
     def flip_it_baby_left(self):
       self.last_flip_time = time.time()
       print "FLAAAAAAAPPING BIIIIRD! (left)"
-      drone.at(libardrone.at_anim, 18, 1000)
+      drone.at(libardrone.at_anim, 18, 800)
 
     def flip_it_baby_right(self):
       self.last_flip_time = time.time()
       print "FLAAAAAAAPPING BIIIIRD! (right)"
-      drone.at(libardrone.at_anim, 19, 1000)
+      drone.at(libardrone.at_anim, 19, 800)
 
 
 if __name__ == "__main__":
