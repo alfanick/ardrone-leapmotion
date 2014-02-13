@@ -175,12 +175,12 @@ class DroneListener(Leap.Listener):
     def flip_it_baby_left(self):
       self.last_flip_time = time.time()
       print "FLAAAAAAAPPING BIIIIRD! (left)"
-      drone.at(libardrone.at_anim, 18, 800)
+      drone.at(libardrone.at_anim, 18, 1000)
 
     def flip_it_baby_right(self):
       self.last_flip_time = time.time()
       print "FLAAAAAAAPPING BIIIIRD! (right)"
-      drone.at(libardrone.at_anim, 19, 800)
+      drone.at(libardrone.at_anim, 19, 1000)
 
 
 if __name__ == "__main__":
