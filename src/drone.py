@@ -13,11 +13,13 @@ class LeapParams:
   # front back
   box_size_z = 100.0
   # rotation
-  angle_range = 0.5
+  angle_range = 0.4
 
-  scale_x = 40.0
-  scale_y = 70.0
-  scale_z = 40.0
+  scale_x = 100.0
+  scale_y = 100.0
+  scale_z = 100.0
+
+  last_flip_wait_time = 1.5
 
   def __init__(self):
     pass
@@ -33,6 +35,7 @@ class DroneListener(Leap.Listener):
     def on_init(self, controller):
         print "Leap Initialized"
         self.start_time = time.time()
+        self.last_flip_time = time.time() - 10
 
     def on_connect(self, controller):
         print "Leap Connected"
@@ -41,6 +44,11 @@ class DroneListener(Leap.Listener):
         controller.enable_gesture(Leap.Gesture.TYPE_CIRCLE);
         controller.enable_gesture(Leap.Gesture.TYPE_KEY_TAP)
 
+        controller.config.set("Gesture.Circle.MinRadius", 100.0)
+        #controller.config.set("Gesture.Circle.MinArc", 6)
+
+        controller.config.save()
+
     def on_disconnect(self, controller):
         pass
 
@@ -48,11 +56,24 @@ class DroneListener(Leap.Listener):
         pass
 
     def on_frame(self, controller):
+        if time.time() - self.last_flip_time < params.last_flip_wait_time:
+          return
+
         # Prevent leap from reading unnecessary stuff
         if time.time() - self.start_time < 1.5:
           return
 
         frame = controller.frame()
+
+
+        for gesture in frame.gestures():
+          if gesture.type == Leap.Gesture.TYPE_CIRCLE:
+            circle = CircleGesture(gesture)
+            if circle.normal.z > 0.8:
+              self.flip_it_baby_left()
+            if circle.normal.z < -0.8:
+              self.flip_it_baby_right()
+            return
 
         if frame.hands.is_empty:
           self.closed_height = -100
@@ -90,7 +111,6 @@ class DroneListener(Leap.Listener):
             else:
               pos = hand.palm_position
               self.reposition(pos.x, pos.y - params.height_offset, pos.z - params.front_offset)
-
         pass
 
     def hand_closed(self, hand):
@@ -152,8 +172,19 @@ class DroneListener(Leap.Listener):
       val = val / float(box) * scale / 100.0
       return val
 
+    def flip_it_baby_left(self):
+      self.last_flip_time = time.time()
+      print "FLAAAAAAAPPING BIIIIRD! (left)"
+      drone.at(libardrone.at_anim, 18, 1000)
+
+    def flip_it_baby_right(self):
+      self.last_flip_time = time.time()
+      print "FLAAAAAAAPPING BIIIIRD! (right)"
+      drone.at(libardrone.at_anim, 19, 1000)
+
 
 if __name__ == "__main__":
+    """
     drone.land()
     time.sleep(2)
 
@@ -171,12 +202,13 @@ if __name__ == "__main__":
     drone.hover()
 
     drone.land()
+    """
 
-    #listener = DroneListener()
-    #controller = Leap.Controller()
+    listener = DroneListener()
+    controller = Leap.Controller()
 
-    #controller.add_listener(listener)
+    controller.add_listener(listener)
 
-    #sys.stdin.readline()
+    sys.stdin.readline()
 
-    #controller.remove_listener(listener)
+    controller.remove_listener(listener)
