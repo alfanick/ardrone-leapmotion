@@ -154,11 +154,29 @@ class DroneListener(Leap.Listener):
 
 
 if __name__ == "__main__":
-    listener = DroneListener()
-    controller = Leap.Controller()
+    drone.land()
+    time.sleep(2)
 
-    controller.add_listener(listener)
+    print "startuje"
 
-    sys.stdin.readline()
+    drone.takeoff()
+    time.sleep(8)
 
-    controller.remove_listener(listener)
+    print "tanczy"
+    drone.at(libardrone.at_anim, 18, 1000)
+
+    time.sleep(5)
+
+    print "laduje"
+    drone.hover()
+
+    drone.land()
+
+    #listener = DroneListener()
+    #controller = Leap.Controller()
+
+    #controller.add_listener(listener)
+
+    #sys.stdin.readline()
+
+    #controller.remove_listener(listener)
